@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>RUN 99 — Survive the City</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<canvas id="game-canvas" aria-label="RUN 99 game view"></canvas>
+
+<!-- ══════ ENVIRONMENTAL SCREEN-EDGE LAYERS ══════ -->
+<div id="env-rain-edge" class="env-layer"></div>
+<div id="env-blackout-edge" class="env-layer"></div>
+<div id="env-flood-edge" class="env-layer"></div>
+<div id="env-collapse-edge" class="env-layer"></div>
+<div id="env-damage-flash" class="env-layer"></div>
+
+<!-- ══════ CITY SURVIVAL INSTRUMENT PANEL ══════ -->
+<div id="hud" class="hidden" aria-hidden="true">
+
+  <!-- Thin top-center 99s countdown : the visual identity -->
+  <header id="countdown-instrument">
+    <div id="countdown-rail">
+      <div id="countdown-fill"></div>
+      <div id="countdown-ticks"></div>
+      <div id="countdown-phase-markers"></div>
+    </div>
+    <div id="countdown-readout">
+      <span id="countdown-time">99.00</span>
+      <span id="countdown-label">SEC&nbsp;TO&nbsp;EXTRACTION</span>
+    </div>
+  </header>
+
+  <!-- Emergency road signage event notification -->
+  <div id="event-sign" class="sign-hidden">
+    <div id="event-sign-stripe"></div>
+    <div id="event-sign-body">
+      <span id="event-sign-code">SYS/00</span>
+      <span id="event-sign-text">CITY GRID NOMINAL</span>
+    </div>
+  </div>
+
+  <!-- Corner telemetry : left = motion -->
+  <aside id="telemetry-left" class="telemetry-corner">
+    <div class="tele-row"><span class="tele-key">SPD</span><span class="tele-val" id="tele-speed">00.0</span><span class="tele-unit">m/s</span></div>
+    <div class="tele-row"><span class="tele-key">DST</span><span class="tele-val" id="tele-distance">0000</span><span class="tele-unit">m</span></div>
+    <div id="speed-bar"><div id="speed-bar-fill"></div></div>
+  </aside>
+
+  <!-- Corner telemetry : right = score -->
+  <aside id="telemetry-right" class="telemetry-corner">
+    <div class="tele-row"><span class="tele-key">SCR</span><span class="tele-val" id="tele-score">000000</span></div>
+    <div class="tele-row combo-row"><span class="tele-key">CMB</span><span class="tele-val" id="tele-combo">×1.0</span></div>
+    <div id="combo-bar"><div id="combo-bar-fill"></div></div>
+  </aside>
+
+  <!-- Circular threat indicator -->
+  <div id="threat-instrument">
+    <svg viewBox="0 0 100 100" width="100%" height="100%">
+      <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="1.5"/>
+      <circle id="threat-ring" cx="50" cy="50" r="44" fill="none" stroke="#d8dde2" stroke-width="3"
+              stroke-linecap="round" stroke-dasharray="276.5" stroke-dashoffset="276.5" transform="rotate(-90 50 50)"/>
+      <g id="threat-blips"></g>
+    </svg>
+    <div id="threat-center"><span id="threat-pct">0</span><em>THREAT</em></div>
+  </div>
+
+  <!-- Route indicator near the road (bottom center) -->
+  <nav id="route-indicator" aria-label="lane indicator">
+    <span class="route-lane" data-lane="0"></span>
+    <span class="route-lane" data-lane="1"></span>
+    <span class="route-lane" data-lane="2"></span>
+  </nav>
+
+  <!-- Near-miss / pickup toast -->
+  <div id="bonus-ticker"></div>
+
+  <!-- Instability warning (90s) -->
+  <div id="instability-warning" class="hidden">CITY&nbsp;INSTABILITY&nbsp;<span id="instability-pct">98</span>%</div>
+
+  <!-- Mobile touch controls -->
+  <div id="touch-controls">
+    <button id="touch-left" aria-label="move left">◄</button>
+    <button id="touch-jump" aria-label="jump">▲</button>
+    <button id="touch-dash" aria-label="dash">≫</button>
+    <button id="touch-right" aria-label="move right">►</button>
+  </div>
+</div>
+
+<!-- ══════ TITLE ══════ -->
+<div id="title-screen">
+  <div id="title-grade"></div>
+  <div id="title-inner">
+    <div id="title-tag">EMERGENCY EVACUATION PROTOCOL</div>
+    <h1 id="title-name">RUN<span>99</span></h1>
+    <div id="title-sub">SURVIVE&nbsp;THE&nbsp;CITY</div>
+    <div id="title-rule"></div>
+    <button id="btn-start">INITIATE&nbsp;RUN</button>
+    <div id="title-controls">
+      <span><b>A/D</b> LANES</span><span><b>SPACE</b> JUMP</span><span><b>SHIFT</b> DASH</span>
+    </div>
+    <div id="title-best"></div>
+  </div>
+</div>
+
+<!-- ══════ DEATH ══════ -->
+<div id="death-screen" class="hidden">
+  <div id="death-inner">
+    <div id="death-time">00.00</div>
+    <div id="death-label">RUN&nbsp;TERMINATED</div>
+    <div id="death-cause">IMPACT</div>
+    <button id="btn-retry" class="btn-run-again">RUN&nbsp;AGAIN</button>
+  </div>
+</div>
+
+<!-- ══════ SURVIVED : premium result ══════ -->
+<div id="result-screen" class="hidden">
+  <div id="result-bg-num">99</div>
+  <div id="result-inner">
+    <div id="result-time">99.00</div>
+    <div id="result-survived">S&nbsp;U&nbsp;R&nbsp;V&nbsp;I&nbsp;V&nbsp;E&nbsp;D</div>
+    <div id="result-rule"></div>
+    <dl id="result-stats">
+      <div><dt>DISTANCE</dt><dd id="res-distance">0 m</dd></div>
+      <div><dt>SCORE</dt><dd id="res-score">0</dd></div>
+      <div><dt>BEST</dt><dd id="res-best">0</dd></div>
+      <div><dt>EVENTS SURVIVED</dt><dd id="res-events">10 / 10</dd></div>
+      <div><dt>NEAR MISSES</dt><dd id="res-nearmiss">0</dd></div>
+    </dl>
+    <div id="res-newbest" class="hidden">NEW&nbsp;CITY&nbsp;RECORD</div>
+    <button id="btn-again" class="btn-run-again">RUN&nbsp;AGAIN</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="js/city.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
